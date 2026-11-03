@@ -35,7 +35,7 @@ what drilling needs: the drill always points straight down.
 | `j3` quill | prismatic, down | lowers the drill | 0–0.15 m |
 
 - Base column 0.40 m tall; the arm works over a table whose top is at z = 0.20 m.
-- Reach: 0.05–0.55 m from the base axis.
+- Reach: 0.17–0.55 m from the base axis (j2's ±145° limit stops the arm folding closer).
 - The drill bit is visual only (no collision shape): Gazebo can't cut, so the bit must not
   collide with the sheet.
 - Each joint gets a Gazebo `JointPositionController` ("motor that goes to the position you
