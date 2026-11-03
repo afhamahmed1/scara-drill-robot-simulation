@@ -32,6 +32,13 @@ def test_bad_hole_is_reported(holes, width, expected):
     assert problems[0].startswith(expected)
 
 
+def test_too_thick_sheet_is_out_of_reach():
+    # The safe height over a 120 mm sheet is 150 mm above the table: the drill only rises to 130 mm
+    job = make_job([[150, 100]])
+    job['sheet']['thickness'] = 120
+    assert 'out of reach, height 150 mm' in check(job)[0]
+
+
 def test_every_problem_is_listed_at_once():
     problems = check(make_job([[-10, 50], [3, 100], [100, 100], [104, 100], [370, 100]], width=400))
     assert len(problems) == 4

@@ -11,6 +11,11 @@ from scara_drill.kinematics import L1, L2, ik
 EDGE_MARGIN = 5  # hole centres must be at least this far from the sheet's edges
 HOME = ((L1 + L2) * 1000, 0.0)  # where the drill starts: all joints at 0, arm straight along x
 
+# Drill cycle heights
+SAFE_HEIGHT = 30      # over the sheet: move between holes up here
+APPROACH_HEIGHT = 5   # over the sheet: go down fast to here, then feed slowly
+DEPTH_BELOW = 2       # drill this far past the bottom of the sheet
+
 
 def hole_positions(job):
     """The holes in robot coordinates: sheet corner + position on the sheet."""
@@ -21,6 +26,7 @@ def hole_positions(job):
 def check(job):
     """Return every problem with the job's holes, as a list of messages (empty = all good)."""
     width, height = job['sheet']['width'], job['sheet']['height']
+    safe_z = job['sheet']['thickness'] + SAFE_HEIGHT  # highest point of the drill cycle
     diameter = job['drill']['diameter']
     holes = job['holes']
     problems = []
@@ -34,9 +40,9 @@ def check(job):
         elif not (EDGE_MARGIN <= hx <= width - EDGE_MARGIN and EDGE_MARGIN <= hy <= height - EDGE_MARGIN):
             problems.append(f'{hole}: closer than {EDGE_MARGIN} mm to the edge')
 
-        # Can the arm get there? (ik wants metres; z = 0 is the table top)
+        # Can the arm get there, up to the safe height? (ik wants metres)
         try:
-            ik(x / 1000, y / 1000, 0)
+            ik(x / 1000, y / 1000, safe_z / 1000)
         except ValueError as error:
             problems.append(f'{hole}: out of reach, {error}')
 

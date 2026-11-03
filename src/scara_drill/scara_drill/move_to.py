@@ -26,11 +26,12 @@ TOLERANCE = 0.0001  # arrived when every joint is this close to its target (rad 
 
 
 class MoveTo(Node):
+    """A node that moves the arm. drill_job builds on it too."""
 
-    def __init__(self):
-        super().__init__('move_to')
+    def __init__(self, name='move_to'):
+        super().__init__(name)
         self.joints = {}  # latest joint positions, e.g. {'j1': 0.5, ...}
-        self.cmd_pubs = [self.create_publisher(Float64, f'/scara/{name}_cmd', 10) for name in JOINTS]
+        self.cmd_pubs = [self.create_publisher(Float64, f'/scara/{joint}_cmd', 10) for joint in JOINTS]
         self.create_subscription(JointState, '/joint_states', self.on_joint_states, 10)
 
     def on_joint_states(self, msg):
@@ -39,6 +40,11 @@ class MoveTo(Node):
     def arrived(self, target):
         return all(abs(self.joints.get(name, float('inf')) - value) < TOLERANCE
                    for name, value in zip(JOINTS, target))
+
+    def send(self, target):
+        """Send each joint motor its target (j1, j2, j3), without waiting."""
+        for pub, value in zip(self.cmd_pubs, target):
+            pub.publish(Float64(data=value))
 
     def move(self, target, timeout=20.0):
         """Send joint targets (j1, j2, j3) and wait until the arm is there. False on timeout."""
@@ -51,8 +57,7 @@ class MoveTo(Node):
             rclpy.spin_once(self, timeout_sec=0.1)
 
         # 2. Send each joint motor its target
-        for pub, value in zip(self.cmd_pubs, target):
-            pub.publish(Float64(data=value))
+        self.send(target)
 
         # 3. Wait until /joint_states shows every joint at its target
         while not self.arrived(target):
