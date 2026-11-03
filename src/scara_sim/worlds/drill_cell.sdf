@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<!-- Drill cell: ground and a work table in front of the arm.
+     The sheet will lie on the table at about x 0.20-0.50 m, y -0.10-0.10 m. -->
+<sdf version="1.10">
+  <world name="drill_cell">
+
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+
+    <light type="directional" name="sun">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>20 20</size></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>20 20</size></plane></geometry>
+          <material><diffuse>0.6 0.6 0.55 1</diffuse><ambient>0.6 0.6 0.55 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Table: a 0.45 x 0.40 m block, top at z = 0.20 m, covering x 0.15-0.60 m, y -0.20-0.20 m -->
+    <model name="table">
+      <static>true</static>
+      <pose>0.375 0 0.10 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.45 0.40 0.20</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.45 0.40 0.20</size></box></geometry>
+          <material><diffuse>0.55 0.4 0.25 1</diffuse><ambient>0.55 0.4 0.25 1</ambient></material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>
