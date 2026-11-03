@@ -18,6 +18,11 @@ Visualization Manager:
       Name: TF
       Enabled: true
       Marker Scale: 0.15
+    - Class: rviz_default_plugins/MarkerArray
+      Name: Drill plan
+      Enabled: true
+      Topic:
+        Value: /drill_markers
   Enabled: true
   Global Options:
     Fixed Frame: world

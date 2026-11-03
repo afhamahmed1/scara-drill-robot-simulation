@@ -1,0 +1,22 @@
+# Example job: a flange plate with 4 corner holes and a ring of 8 holes, listed in a messy order.
+# Everything in millimetres; holes are measured from the sheet's corner, like on a drawing.
+sheet:
+  width: 300            # along the robot's x axis
+  height: 200           # along y
+  thickness: 3
+  corner: [200, -100]   # where the sheet's (0, 0) corner sits, in robot coordinates
+drill:
+  diameter: 6
+holes:                  # [x, y] from the sheet corner, any order
+  - [20, 20]
+  - [200, 100]
+  - [280, 180]
+  - [115, 65]
+  - [280, 20]
+  - [150, 150]
+  - [20, 180]
+  - [185, 65]
+  - [100, 100]
+  - [185, 135]
+  - [150, 50]
+  - [115, 135]

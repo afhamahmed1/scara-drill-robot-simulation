@@ -4,8 +4,9 @@ A SCARA robot arm with a drill, simulated in Gazebo. You give it a sheet and a l
 positions; it sorts them into a short path and drills them. The full design is in
 [PLAN.md](PLAN.md).
 
-**So far (Stage 2):** the arm in Gazebo and RViz with a motor on each joint, and a `move_to`
-command that puts the drill tip at a point you give in millimetres.
+**So far (Stage 3):** the arm in Gazebo and RViz with a motor on each joint, a `move_to`
+command that puts the drill tip at a point you give in millimetres, and a `drill_job` command
+that checks a job file's holes, sorts them into a short path and shows the plan.
 
 
 ## 1. Build
@@ -90,15 +91,62 @@ the elbow angle j2. The shoulder angle j1 is the direction to the tip minus the 
 elbow adds. j3 is just the height. Each point has two answers (elbow bent left or right);
 it always takes j2 ≥ 0, so the arm never flips between holes.
 
-## 5. Unit tests
+## 5. Plan a drilling job
 
-The kinematics are tested without Gazebo:
+A job file gives the sheet and the holes in millimetres, measured from the sheet's corner like
+on a drawing (see `src/scara_drill/jobs/example.yaml`). With the simulation running:
+
+```bash
+ros2 run scara_drill drill_job --ros-args -p job:=jobs/example.yaml
+```
+
+```
+Job .../jobs/example.yaml: 300 x 200 x 3 mm sheet, 6 mm drill, 12 holes
+All holes OK
+Travel: as given 1908 mm → sorted 1031 mm
+Drilling order (hole numbers from the file): 3, 10, 2, 8, 11, 4, 9, 12, 6, 7, 1, 5
+```
+
+The sheet appears on the table in Gazebo. In RViz, the **Drill plan** display shows the sheet,
+a grey disc for each hole numbered in drilling order, and the orange path from the arm's home
+position.
+
+What it does:
+
+1. **Check:** each hole must be on the sheet, with its centre at least 5 mm from the edges,
+   within the arm's reach, and at least one drill diameter (centre to centre) from every other
+   hole. A bad job is refused, with every problem listed:
+
+   ```bash
+   ros2 run scara_drill drill_job --ros-args -p job:=jobs/bad.yaml
+   ```
+
+   ```
+   Job refused, 4 problem(s):
+     - hole 2 at [-10, 50]: off the 380 x 200 mm sheet
+     - hole 3 at [3, 100]: closer than 5 mm to the edge
+     - hole 6 at [370, 100]: out of reach, 570 mm from the base, but the arm reaches 172 to 550 mm
+     - holes 4 and 5: only 4.0 mm apart, they would overlap with a 6 mm drill
+   ```
+
+2. **Sort:** nearest neighbour (start at home, always go to the closest hole left), then
+   2-opt (wherever two legs of the path cross, reverse the holes between them; repeat until
+   nothing gets shorter).
+3. **Show:** put the sheet into Gazebo (replacing the last one) and send the plan to RViz.
+
+For your own job, give any path: `-p job:=/path/to/my_job.yaml`. Short names like
+`jobs/example.yaml` are looked up in the installed package, so after editing a file in
+`src/scara_drill/jobs/`, run `colcon build` again.
+
+## 6. Unit tests
+
+The kinematics and the planner are tested without Gazebo:
 
 ```bash
 colcon test --packages-select scara_drill --event-handlers console_direct+
 ```
 
-It should end with `15 passed`.
+It should end with `24 passed`.
 
 ## Files
 
@@ -108,10 +156,15 @@ It should end with `15 passed`.
 | `src/scara_sim/worlds/drill_cell.sdf` | The world: ground, sun and the work table (top at z = 0.20 m) |
 | `src/scara_sim/config/bridge.yaml` | Which topics are copied between Gazebo and ROS 2 |
 | `src/scara_sim/launch/sim.launch.py` | Starts Gazebo, the arm, the bridge and RViz |
-| `src/scara_sim/rviz/scara.rviz` | RViz layout: the arm and its frames |
+| `src/scara_sim/rviz/scara.rviz` | RViz layout: the arm, its frames and the drill plan |
 | `src/scara_drill/scara_drill/kinematics.py` | IK and FK: joint angles ↔ drill tip position, and the reach checks |
 | `src/scara_drill/scara_drill/move_to.py` | `move_to` node: point in mm → IK → joint motors, waits until the arm arrives |
+| `src/scara_drill/scara_drill/planner.py` | Checks a job's holes and sorts them (nearest neighbour + 2-opt) |
+| `src/scara_drill/scara_drill/drill_job.py` | `drill_job` node: reads a job file, checks, sorts, puts the sheet in Gazebo and the plan in RViz |
+| `src/scara_drill/jobs/example.yaml` | Example job: flange plate with 12 holes in a messy order |
+| `src/scara_drill/jobs/bad.yaml` | A job with mistakes on purpose, to see the checks |
 | `src/scara_drill/test/test_kinematics.py` | Unit tests for the kinematics |
+| `src/scara_drill/test/test_planner.py` | Unit tests for the planner |
 | `PLAN.md` | The design and the four stages |
 
 ## Stages (git branches)
@@ -122,12 +175,12 @@ Each stage has its own branch. `main` always holds the latest finished stage.
 |---|---|---|
 | `stage-1-arm` | SCARA arm in Gazebo + RViz, joint motors, bridge | done |
 | `stage-2-ik` | Inverse kinematics + `move_to` node | done |
-| `stage-3-plan` | Job file, hole checks, path sorting, sheet in Gazebo | planned |
+| `stage-3-plan` | Job file, hole checks, path sorting, sheet in Gazebo | done |
 | `stage-4-drill` | Drill cycle, holes appear on the sheet, summary | planned |
 
 Open a stage, then rebuild from clean:
 
 ```bash
-git switch stage-2-ik
+git switch stage-3-plan
 rm -rf build install log && colcon build
 ```

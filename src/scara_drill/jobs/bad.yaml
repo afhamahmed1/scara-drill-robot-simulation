@@ -1,0 +1,15 @@
+# A job with mistakes, to see the checks at work: it is refused, with every problem listed.
+sheet:
+  width: 380
+  height: 200
+  thickness: 3
+  corner: [200, -100]
+drill:
+  diameter: 6
+holes:
+  - [20, 20]            # fine
+  - [-10, 50]           # off the sheet
+  - [3, 100]            # only 3 mm from the edge
+  - [100, 100]
+  - [104, 100]          # 4 mm from the hole before: they would overlap
+  - [370, 100]          # 570 mm from the robot's base: out of reach
